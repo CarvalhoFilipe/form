@@ -306,12 +306,14 @@ export default function HomeScreen() {
               />
             )}
           />
+        </ScrollView>
+        <View className="pt-4">
           <Animated.View
             className="mt-6"
             style={{ transform: [{ scale: submitScale }] }}
           >
             <Pressable
-              className="p-5 bg-green-800 rounded-full items-center justify-center"
+              className="p-5 mb-4 bg-green-800 rounded-full items-center justify-center"
               onPressIn={() => animateSubmit(0.97)}
               onPressOut={() => animateSubmit(1)}
               onHoverIn={() => animateSubmit(1.03)}
@@ -321,7 +323,7 @@ export default function HomeScreen() {
               <Text className="text-white text-xl font-bold">Enviar</Text>
             </Pressable>
           </Animated.View>
-        </ScrollView>
+        </View>
       </View>
     </StyledSafeAreaView>
   );
