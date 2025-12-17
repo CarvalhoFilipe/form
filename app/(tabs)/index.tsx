@@ -5,8 +5,8 @@ import { Header } from "@/components/ui/Header";
 import { Section } from "@/components/ui/Section";
 import { Animated, Pressable, ScrollView, Text, View } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-import { FormHome } from "@/models/home";
-import { Validators } from "@/utils/validators";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { formSchema, FormSchema } from "@/models/home";
 import { Masks } from "@/utils/mask";
 import { CepService } from "@/services/cep-service";
 import { Notification } from "@/utils/notification";
@@ -18,9 +18,13 @@ export default function HomeScreen() {
     setValue,
     watch,
     reset,
-    setError,
+    clearErrors,
     formState: { errors },
-  } = useForm<FormHome>({});
+  } = useForm<FormSchema>({
+    resolver: zodResolver(formSchema),
+    mode: "onChange",
+    reValidateMode: "onChange",
+  });
   const submitScale = useRef(new Animated.Value(1)).current;
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [cepApiError, setCepApiError] = useState<string | null>(null);
@@ -44,10 +48,7 @@ export default function HomeScreen() {
         setValue("city", data.localidade || "");
         setValue("state", data.uf || "");
         setValue("complement", data.complemento || "");
-        setError("street", { type: "manual", message: undefined });
-        setError("neighborhood", { type: "manual", message: undefined });
-        setError("city", { type: "manual", message: undefined });
-        setError("state", { type: "manual", message: undefined });
+        clearErrors(["street", "neighborhood", "city", "state"]);
       } catch (error) {
         setCepApiError("Não foi possível buscar o CEP agora.");
         Notification.error("Não foi possível buscar o CEP informado.");
@@ -55,7 +56,7 @@ export default function HomeScreen() {
         setIsFetchingCep(false);
       }
     },
-    [setValue]
+    [clearErrors, setValue]
   );
 
   const clearFieldsAboutCep = useCallback(() => {
@@ -90,8 +91,9 @@ export default function HomeScreen() {
     if (digits.length < 8) {
       clearFieldsAboutCep();
       setCepApiError(null);
+      clearErrors(["street", "neighborhood", "city", "state"]);
     }
-  }, [clearFieldsAboutCep, fetchAddressByCep, watchedCep]);
+  }, [clearErrors, clearFieldsAboutCep, fetchAddressByCep, watchedCep]);
 
   return (
     <StyledSafeAreaView className="flex-1" edges={["top"]}>
@@ -110,7 +112,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="name"
-            rules={Validators.Required()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Nome Completo"
@@ -128,7 +129,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="email"
-            rules={Validators.Email()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="E-mail"
@@ -148,7 +148,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="password"
-            rules={Validators.Password()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Senha"
@@ -167,7 +166,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="phone"
-            rules={Validators.Phone()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Telefone"
@@ -187,7 +185,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="cep"
-            rules={Validators.Cep()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="CEP"
@@ -214,7 +211,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="street"
-            rules={{ required: "Logradouro é obrigatório." }}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Logradouro/Rua"
@@ -232,7 +228,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="number"
-            rules={{ required: "Número é obrigatório." }}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Número"
@@ -262,7 +257,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="neighborhood"
-            rules={{ required: "Bairro é obrigatório." }}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Bairro"
@@ -280,7 +274,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="city"
-            rules={{ required: "Cidade é obrigatória." }}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Cidade"
@@ -298,13 +291,6 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="state"
-            rules={{
-              required: "UF é obrigatória.",
-              pattern: {
-                value: /^[A-Za-z]{2}$/,
-                message: "Use 2 letras, ex: SP.",
-              },
-            }}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Estado/UF"

@@ -17,6 +17,8 @@
     "@react-navigation/native": "^7.1.8",
     "@tailwindcss/postcss": "^4.1.18",
     "axios": "^1.13.2",
+    "@hookform/resolvers": "^3.9.0",
+    "zod": "^3.24.1",
     "expo": "~54.0.29",
     "expo-constants": "~18.0.12",
     "expo-font": "~14.0.10",
