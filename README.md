@@ -1,50 +1,40 @@
-# Welcome to your Expo app 👋
+# Formulário com CEP e Geolocalização
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo Expo de cadastro que preenche endereço automaticamente via CEP (API ViaCEP) ou geolocalização do dispositivo. O fluxo usa validação com Zod, máscaras para telefone/CEP, notificações por toast e React Hook Form para controle dos campos.
 
-## Get started
+- **Principais recursos:** busca CEP, preenchimento por localização atual, máscaras de telefone/CEP/número, validação em tempo real, feedback de sucesso/erro.
+- **Tecnologias:** Expo Router, React Native, React Hook Form, Zod, Axios, Expo Location, NativeWind/Tailwind, Toast Message.
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Instalação
 
 ```bash
-npm run reset-project
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Execução
 
-## Learn more
+```bash
+npx expo start
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+Escolha em seguida o dispositivo (Expo Go, emulador Android ou simulador iOS). Ao abrir o formulário, você pode:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Digitar o CEP para preencher o endereço pela API.
+- Usar o botão “Usar minha localização” para solicitar permissão e preencher automaticamente.
 
-## Join the community
+# Decisões técnicas
 
-Join our community of developers creating universal apps.
+Para esse projeto utilizei o Nativewind por estar acostumado a utilizar o tailwind para desenvolvimento web.
+Além de ser muito utilizado no mercado de trabalho é bem fácil de utilizar.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Sobre as validações inicialmente fiz o formulário, depois criei alguns componentes, adicionei um validators e optei por utilizar o zod por ser fortemente tipado e fácil gerenciar as minhas tipagens.
+
+# Dificuldades
+
+Não encontradas para esse desafio.
+
+# Melhorias futuras
+
+Iria criar uma interface visual mais agradável para o usuário, porém com o mesmo conceito de clean, interface mais limpa.
+
+Além de criar os testes unitários que acabei não criando a priori no formulário.
