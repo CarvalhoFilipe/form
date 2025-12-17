@@ -3,7 +3,6 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import "@/styles/global.css";
@@ -24,7 +23,10 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <HomeScreen />
-        <StatusBar style="auto" />
+        <StatusBar
+          style="auto"
+          backgroundColor={colorScheme === "dark" ? "#000" : "#fff"}
+        />
       </ThemeProvider>
       <Toast position="top" />
     </SafeAreaProvider>

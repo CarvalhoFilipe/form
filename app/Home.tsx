@@ -10,6 +10,7 @@ import { formSchema, FormSchema } from "@/models/home";
 import { Masks } from "@/utils/mask";
 import { CepService } from "@/services/cep-service";
 import { Notification } from "@/utils/notification";
+import { LocationService } from "@/services/location-service";
 
 export default function HomeScreen() {
   const {
@@ -28,6 +29,9 @@ export default function HomeScreen() {
   const submitScale = useRef(new Animated.Value(1)).current;
   const [isFetchingCep, setIsFetchingCep] = useState(false);
   const [cepApiError, setCepApiError] = useState<string | null>(null);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const skipNextCepFetch = useRef(false);
   const watchedCep = watch("cep") || "";
 
   const fetchAddressByCep = useCallback(
@@ -67,6 +71,41 @@ export default function HomeScreen() {
     setValue("complement", "");
   }, [setValue]);
 
+  const fillAddressFromLocation = useCallback(async () => {
+    try {
+      setIsFetchingLocation(true);
+      const result = await LocationService.getCurrentAddress();
+
+      if (result.denied) {
+        setLocationDenied(true);
+        Notification.error("Permissão de localização negada.");
+        return;
+      }
+
+      if (!result.address) {
+        Notification.error("Não foi possível obter sua localização.");
+        return;
+      }
+
+      setLocationDenied(false);
+      const { address } = result;
+      if (address.postalCode) {
+        skipNextCepFetch.current = true;
+        setValue("cep", Masks.cepMask(address.postalCode));
+      }
+      setValue("street", address.street || "");
+      setValue("neighborhood", address.neighborhood || "");
+      setValue("city", address.city || "");
+      setValue("state", (address.state || "").toUpperCase());
+      clearErrors(["street", "neighborhood", "city", "state"]);
+      Notification.success("Endereço preenchido pela sua localização.");
+    } catch (error) {
+      Notification.error("Não foi possível obter sua localização.");
+    } finally {
+      setIsFetchingLocation(false);
+    }
+  }, [clearErrors, setValue]);
+
   const animateSubmit = (toValue: number) => {
     Animated.spring(submitScale, {
       toValue,
@@ -85,7 +124,11 @@ export default function HomeScreen() {
     const digits = watchedCep.replace(/\D/g, "");
 
     if (digits.length === 8) {
-      fetchAddressByCep(digits);
+      if (skipNextCepFetch.current) {
+        skipNextCepFetch.current = false;
+      } else {
+        fetchAddressByCep(digits);
+      }
     }
 
     if (digits.length < 8) {
@@ -200,6 +243,24 @@ export default function HomeScreen() {
               />
             )}
           />
+          <View className="flex-row items-center gap-3 mb-2">
+            <Pressable
+              className="px-3 py-2 bg-blue-600 rounded-md"
+              disabled={isFetchingLocation}
+              onPress={fillAddressFromLocation}
+            >
+              <Text className="text-white font-semibold text-sm">
+                {isFetchingLocation
+                  ? "Buscando localização..."
+                  : "Usar minha localização"}
+              </Text>
+            </Pressable>
+            {locationDenied ? (
+              <Text className="text-xs text-red-600">
+                Permita localização para preencher automaticamente.
+              </Text>
+            ) : null}
+          </View>
           {isFetchingCep ? (
             <Text className="text-xs text-gray-500 mb-2">
               Buscando endereço pelo CEP...
