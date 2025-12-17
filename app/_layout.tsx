@@ -11,6 +11,7 @@ import "@/styles/global.css";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import HomeScreen from "./Home";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -22,9 +23,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
+        <HomeScreen />
         <StatusBar style="auto" />
       </ThemeProvider>
       <Toast position="top" />
