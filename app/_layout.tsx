@@ -10,6 +10,7 @@ import "@/styles/global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
 export const unstable_settings = {
   anchor: "(tabs)",
@@ -26,6 +27,7 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
+      <Toast position="top" />
     </SafeAreaProvider>
   );
 }

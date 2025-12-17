@@ -1,46 +1,70 @@
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { StyledSafeAreaView } from "@/components/StyledSafeAreaView";
 import { FormItem } from "@/components/ui/Form/FormItem";
 import { Header } from "@/components/ui/Header";
 import { Section } from "@/components/ui/Section";
 import { Animated, Pressable, ScrollView, Text, View } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-
-type FormData = {
-  name: string;
-  email: string;
-  password: string;
-  phone: string;
-  cep: string;
-  street: string;
-  number: string;
-  complement: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-};
+import { FormHome } from "@/models/home";
+import { Validators } from "@/utils/validators";
+import { Masks } from "@/utils/mask";
+import { CepService } from "@/services/cep-service";
+import { Notification } from "@/utils/notification";
 
 export default function HomeScreen() {
   const {
     control,
     handleSubmit,
+    setValue,
+    watch,
+    reset,
+    setError,
     formState: { errors },
-  } = useForm<FormData>({
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      phone: "",
-      cep: "",
-      street: "",
-      number: "",
-      complement: "",
-      neighborhood: "",
-      city: "",
-      state: "",
-    },
-  });
+  } = useForm<FormHome>({});
   const submitScale = useRef(new Animated.Value(1)).current;
+  const [isFetchingCep, setIsFetchingCep] = useState(false);
+  const [cepApiError, setCepApiError] = useState<string | null>(null);
+  const watchedCep = watch("cep") || "";
+
+  const fetchAddressByCep = useCallback(
+    async (digits: string) => {
+      try {
+        setIsFetchingCep(true);
+        // adicionado para demostrar o loading
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        setCepApiError(null);
+        const data = await CepService.getByCep(digits);
+
+        if (!data || data.erro) {
+          throw new Error("CEP não encontrado.");
+        }
+        Notification.success("Endereço encontrado e preenchido com sucesso.");
+        setValue("street", data.logradouro || "");
+        setValue("neighborhood", data.bairro || "");
+        setValue("city", data.localidade || "");
+        setValue("state", data.uf || "");
+        setValue("complement", data.complemento || "");
+        setError("street", { type: "manual", message: undefined });
+        setError("neighborhood", { type: "manual", message: undefined });
+        setError("city", { type: "manual", message: undefined });
+        setError("state", { type: "manual", message: undefined });
+      } catch (error) {
+        setCepApiError("Não foi possível buscar o CEP agora.");
+        Notification.error("Não foi possível buscar o CEP informado.");
+      } finally {
+        setIsFetchingCep(false);
+      }
+    },
+    [setValue]
+  );
+
+  const clearFieldsAboutCep = useCallback(() => {
+    setValue("street", "");
+    setValue("neighborhood", "");
+    setValue("city", "");
+    setValue("state", "");
+    setValue("complement", "");
+  }, [setValue]);
 
   const animateSubmit = (toValue: number) => {
     Animated.spring(submitScale, {
@@ -52,11 +76,26 @@ export default function HomeScreen() {
   };
 
   const onSubmit = handleSubmit((data) => {
-    console.log("Enviar formulário", data);
+    Notification.success("Formulário enviado com sucesso.");
+    reset();
   });
+
+  useEffect(() => {
+    const digits = watchedCep.replace(/\D/g, "");
+
+    if (digits.length === 8) {
+      fetchAddressByCep(digits);
+    }
+
+    if (digits.length < 8) {
+      clearFieldsAboutCep();
+      setCepApiError(null);
+    }
+  }, [clearFieldsAboutCep, fetchAddressByCep, watchedCep]);
+
   return (
     <StyledSafeAreaView className="flex-1" edges={["top"]}>
-      <View className="flex-1 p-4">
+      <View className="flex-1 p-4 bg-white dark:bg-black">
         <Header title="Formulário de cadastro" />
         <ScrollView
           className="mt-6"
@@ -71,7 +110,7 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="name"
-            rules={{ required: "Este campo é obrigatório." }}
+            rules={Validators.Required()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Nome Completo"
@@ -81,6 +120,7 @@ export default function HomeScreen() {
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
+                required
                 errorText={errors.name?.message}
               />
             )}
@@ -88,13 +128,7 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="email"
-            rules={{
-              required: "E-mail é obrigatório.",
-              pattern: {
-                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                message: "Informe um e-mail válido.",
-              },
-            }}
+            rules={Validators.Email()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="E-mail"
@@ -106,6 +140,7 @@ export default function HomeScreen() {
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
+                required
                 errorText={errors.email?.message}
               />
             )}
@@ -113,10 +148,7 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="password"
-            rules={{
-              required: "Senha é obrigatória.",
-              minLength: { value: 6, message: "Mínimo de 6 caracteres." },
-            }}
+            rules={Validators.Password()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Senha"
@@ -127,6 +159,7 @@ export default function HomeScreen() {
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
+                required
                 errorText={errors.password?.message}
               />
             )}
@@ -134,6 +167,7 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="phone"
+            rules={Validators.Phone()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Telefone"
@@ -142,7 +176,8 @@ export default function HomeScreen() {
                 autoComplete="tel"
                 maxLength={15}
                 onBlur={onBlur}
-                onChangeText={onChange}
+                errorText={errors.phone?.message}
+                onChangeText={(text) => onChange(Masks.phoneMask(text))}
                 value={value}
               />
             )}
@@ -152,13 +187,7 @@ export default function HomeScreen() {
           <Controller
             control={control}
             name="cep"
-            rules={{
-              required: "CEP é obrigatório.",
-              pattern: {
-                value: /^\d{5}-?\d{3}$/,
-                message: "Use o formato 00000-000.",
-              },
-            }}
+            rules={Validators.Cep()}
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="CEP"
@@ -167,16 +196,20 @@ export default function HomeScreen() {
                 autoComplete="postal-code"
                 maxLength={9}
                 onBlur={onBlur}
-                onChangeText={onChange}
+                onChangeText={(text) => onChange(Masks.cepMask(text))}
                 value={value}
+                required
                 errorText={errors.cep?.message}
               />
             )}
           />
-          {false ? (
+          {isFetchingCep ? (
             <Text className="text-xs text-gray-500 mb-2">
               Buscando endereço pelo CEP...
             </Text>
+          ) : null}
+          {cepApiError ? (
+            <Text className="text-xs text-red-600 mb-2">{cepApiError}</Text>
           ) : null}
           <Controller
             control={control}
@@ -185,11 +218,13 @@ export default function HomeScreen() {
             render={({ field: { onChange, onBlur, value } }) => (
               <FormItem
                 label="Logradouro/Rua"
+                editable={false}
                 placeholder="Preenchido automaticamente pelo CEP"
                 textContentType="streetAddressLine1"
                 onBlur={onBlur}
                 onChangeText={onChange}
                 value={value}
+                required
                 errorText={errors.street?.message}
               />
             )}
@@ -204,8 +239,9 @@ export default function HomeScreen() {
                 placeholder="Digite o número"
                 keyboardType="number-pad"
                 onBlur={onBlur}
-                onChangeText={onChange}
+                onChangeText={(text) => onChange(Masks.numberMask(text))}
                 value={value}
+                required
                 errorText={errors.number?.message}
               />
             )}
@@ -233,8 +269,10 @@ export default function HomeScreen() {
                 placeholder="Preenchido automaticamente pelo CEP"
                 textContentType="sublocality"
                 onBlur={onBlur}
+                editable={false}
                 onChangeText={onChange}
                 value={value}
+                required
                 errorText={errors.neighborhood?.message}
               />
             )}
@@ -249,8 +287,10 @@ export default function HomeScreen() {
                 placeholder="Preenchido automaticamente pelo CEP"
                 textContentType="addressCity"
                 onBlur={onBlur}
+                editable={false}
                 onChangeText={onChange}
                 value={value}
+                required
                 errorText={errors.city?.message}
               />
             )}
@@ -275,6 +315,7 @@ export default function HomeScreen() {
                 onBlur={onBlur}
                 onChangeText={(text) => onChange(text.toUpperCase())}
                 value={value}
+                required
                 errorText={errors.state?.message}
               />
             )}
